@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ClimbCycle Scorer</title>
+<style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f4f4f4;
+    color: #333;
+    padding: 30px;
+    max-width: 600px;
+    margin: auto;
+  }
+
+  h1, h2, h3 {
+    color: #2e8b57;
+  }
+
+  .section {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+
+  input, select, button {
+    margin-top: 5px;
+    padding: 8px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+  }
+
+  button {
+    background-color: #2e8b57;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  button:hover {
+    background-color: #246b45;
+  }
+
+  #scoreboard ul, #leaderboard ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  li {
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  strong {
+    display: block;
+    margin-top: 10px;
+    font-size: 1.2em;
+  }
+</style>
+</head>
+<body>
+
+  <h1>ClimbCycle Scorer</h1>
+
+  <div class="section" id="setup">
+   <div id="playerSetup">
+  <label>Add Player:
+    <input type="text" id="newPlayerName">
+  </label>
+  <button onclick="addPlayer()">Add Player</button>
+  <ul id="playerList"></ul>
+</div>
+    <label>Game Mode:
+      <select id="gameMode">
+        <option value="unlimited">Unlimited</option>
+        <option value="time">Time Mode</option>
+        <option value="limit">Climb Limit Mode</option>
+      </select>
+    </label>
+    <label id="customInputLabel" style="display:none;">Custom Value: <input type="number" id="customValue"></label>
+    <button onclick="startGame()">Start Game</button>
+  </div>
+
+  <div class="section" id="gameplay" style="display:none;">
+    <h2 id="currentGrade">Current Grade: V0</h2>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+  <div style="flex: 1;">
+    <label>Climb Completed:</label>
+<div style="display: flex; gap: 10px;">
+  <button onclick="completeClimb(1)">1 Attempt</button>
+  <button onclick="completeClimb(2)">2 Attempts</button>
+  <button onclick="completeClimb(3)">3 Attempts</button>
+</div>
+    <div id="playerScores" style="margin-bottom: 20px;"></div>
+    <button onclick="failClimb()">Climb Failed</button>
+  </div><button onclick="endGame('Game ended manually.')">End Game</button>
+  <div style="flex-shrink: 0; text-align: center;">
+    <h2 style="font-size: 2.5em; margin: 0; color: #2e8b57;">Score</h2>
+    <div id="bigScore" style="font-size: 3em; font-weight: bold; color: #333;">0</div>
+  </div>
+</div>
+
+<div id="scoreboard" style="display:none;">
+  <h3>Score Summary</h3>
+  <ul id="scoreList"></ul>
+  <strong>Total Score: <span id="totalScore">0</span></strong>
+</div>
+
+ <script>
+  let players = [];
+  let currentPlayerIndex = 0;
+  let gameMode = 'unlimited';
+  let customLimit = 0;
+  let timerInterval = null;
+  let timeRemaining = 0;
+
+  function addPlayer() {
+    const nameInput = document.getElementById('newPlayerName');
+    const name = nameInput.value.trim();
+    if (name) {
+      players.push({ name, score: 0, history: [], v0Resets: 0, grade: 0 });
+      nameInput.value = '';
+      updatePlayerList();
+    }
+  }
+
+  function nextPlayer() {
+    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+    updateGradeDisplay();
+    updatePlayerDisplay();
+    document.getElementById('bigScore').innerText = players[currentPlayerIndex].score;
+    updatePlayerScores();
+  }
+
+  function updatePlayerList() {
+    const list = document.getElementById('playerList');
+    list.innerHTML = '';
+    players.forEach((player, index) => {
+      const item = document.createElement('li');
+      item.textContent = `${index + 1}. ${player.name}`;
+      list.appendChild(item);
+    });
+  }
+
+  function updatePlayerDisplay() {
+    const player = players[currentPlayerIndex];
+    document.getElementById('currentGrade').innerText = `Current Grade: V${player.grade} | Player: ${player.name}`;
+  }
+
+  document.getElementById('gameMode').addEventListener('change', function () {
+    const mode = this.value;
+    document.getElementById('customInputLabel').style.display = (mode !== 'unlimited') ? 'block' : 'none';
+  });
+
+  function startGame() {
+    const mode = document.getElementById('gameMode').value;
+    const custom = parseInt(document.getElementById('customValue').value);
+    gameMode = mode;
+    customLimit = isNaN(custom) ? 0 : custom;
+
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('gameplay').style.display = 'block';
+    updateGradeDisplay();
+
+    if (gameMode === 'time') {
+      timeRemaining = customLimit * 60;
+      startTimer();
+    }
+    updatePlayerScores();
+  }
+
+  function updateGradeDisplay() {
+    const player = players[currentPlayerIndex];
+    document.getElementById('currentGrade').innerText = `Current Grade: V${player.grade}`;
+  }
+
+  function calculatePoints(grade, attempts) {
+    if (grade === 0) return 0;
+    if (grade === 1) return 1;
+    if (grade === 2) return attempts <= 2 ? 2 : 1;
+    if (grade >= 3) {
+      if (attempts === 1) return 3;
+      if (attempts === 2) return 2;
+      return 1;
+    }
+    return 0;
+  }
+
+  function completeClimb(attempts) {
+    const player = players[currentPlayerIndex];
+    const points = calculatePoints(player.grade, attempts);
+
+    player.history.push({ grade: player.grade, attempts, points });
+    player.score += points;
+    player.grade++;
+
+    document.getElementById('bigScore').innerText = player.score;
+    updatePlayerScores();
+    updateGradeDisplay();
+    updatePlayerDisplay();
+
+    nextPlayer();
+  }
+
+  function failClimb() {
+    const player = players[currentPlayerIndex];
+    player.history.push({ grade: player.grade, attempts: 3, points: 0 });
+    player.grade = 0;
+
+    if (player.grade === 0 && gameMode === 'limit') {
+      player.v0Resets++;
+      if (player.v0Resets >= customLimit) {
+        endGame(`${player.name} reached climb limit.`);
+        return;
+      }
+    }
+
+    document.getElementById('bigScore').innerText = player.score;
+    updatePlayerScores();
+    updateGradeDisplay();
+    updatePlayerDisplay();
+
+    nextPlayer();
+  }
+
+  function startTimer() {
+    timerInterval = setInterval(() => {
+      timeRemaining--;
+      document.getElementById('currentGrade').innerText =
+        `Current Grade: V${players[currentPlayerIndex].grade} | Time Left: ${formatTime(timeRemaining)}`;
+      if (timeRemaining <= 0) {
+        clearInterval(timerInterval);
+        endGame("Time's up!");
+      }
+    }, 1000);
+  }
+
+  function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  function endGame(message) {
+    if (!confirm("Are you sure you want to end the game?")) return;
+
+    clearInterval(timerInterval);
+    document.getElementById('scoreboard').style.display = 'block';
+    document.getElementById('leaderboard').style.display = 'block';
+    document.getElementById('climbHistoryPage').style.display = 'block';
+    document.getElementById('finalLeaderboard').style.display = 'block';
+
+    updateLeaderboard();
+    updateClimbHistory();
+    renderFinalLeaderboard();
+    alert(`${message}`);
+  }
+
+  function updateLeaderboard() {
+    const list = document.getElementById('leaderboardList');
+    list.innerHTML = '';
+    players.sort((a, b) => b.score - a.score);
+    players.forEach((player, index) => {
+      const item = document.createElement('li');
+      item.textContent = `${index + 1}. ${player.name} - ${player.score} points`;
+      list.appendChild(item);
+    });
+  }
+
+  function updateClimbHistory() {
+    const list = document.getElementById('climbHistoryList');
+    list.innerHTML = '';
+    players.forEach((player) => {
+      const header = document.createElement('li');
+      header.innerHTML = `<strong>${player.name}</strong>`;
+      list.appendChild(header);
+      player.history.forEach((entry, index) => {
+        const item = document.createElement('li');
+        item.textContent = `#${index + 1}: V${entry.grade} | Attempts: ${entry.attempts} | Points: ${entry.points}`;
+        list.appendChild(item);
+      });
+    });
+  }
+
+  function updatePlayerScores() {
+    const container = document.getElementById('playerScores');
+    container.innerHTML = '';
+    players.forEach((player, index) => {
+      const div = document.createElement('div');
+      div.style = `
+        padding: 8px;
+        margin-bottom: 5px;
+        background: ${index === currentPlayerIndex ? '#dff0d8' : '#fff'};
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      `;
+      div.innerHTML = `<strong>${player.name}</strong>: ${player.score} points`;
+      container.appendChild(div);
+    });
+  }
+
+  function renderFinalLeaderboard() {
+    const body = document.getElementById('leaderboardBody');
+    body.innerHTML = '';
+
+    players.forEach(player => {
+      let total = 0;
+      player.history.forEach((entry, index) => {
+        total += entry.points;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td style="padding:8px; border:1px solid #ccc;">${player.name}</td>
+          <td style="padding:8px; border:1px solid #ccc;">${index + 1}</td>
+          <td style="padding:8px; border:1px solid #ccc;">V${entry.grade}</td>
+          <td style="padding:8px; border:1px solid #ccc;">${entry.attempts}</td>
+          <td style="padding:8px; border:1px solid #ccc;">${entry.points}</td>
+          <td style="padding:8px; border:1px solid #ccc;">${total}</td>
+        `;
+        body.appendChild(row);
+      });
+    });
+  }
+</script>
+
+<!-- Final Leaderboard Table -->
+<div class="section" id="finalLeaderboard" style="display:none;">
+  <h2>Final Leaderboard</h2>
+  <table id="leaderboardTable" style="width:100%; border-collapse: collapse;">
+    <thead>
+      <tr style="background-color:#2e8b57; color:white;">
+        <th style="padding:8px; border:1px solid #ccc;">Player</th>
+        <th style="padding:8px; border:1px solid #ccc;">Climb #</th>
+        <th style="padding:8px; border:1px solid #ccc;">Grade</th>
+        <th style="padding:8px; border:1px solid #ccc;">Attempts</th>
+        <th style="padding:8px; border:1px solid #ccc;">Points</th>
+        <th style="padding:8px; border:1px solid #ccc;">Total</th>
+      </tr>
+    </thead>
+    <tbody id="leaderboardBody"></tbody>
+  </table>
+</div>
+
+<!-- Leaderboard Section -->
+<div class="section" id="leaderboard" style="display:none;">
+  <h2>Leaderboard</h2>
+  <ul id="leaderboardList"></ul>
+  <button onclick="exportCSV()">Export as CSV</button>
+  <button onclick="exportJSON()">Export as JSON</button>
+</div>
+
+<!-- Climb History Section -->
+<div class="section" id="climbHistoryPage" style="display:none;">
+  <h2>Climb History</h2>
+  <ul id="climbHistoryList"></ul>
+</div>
+
+</body>
+</html>
