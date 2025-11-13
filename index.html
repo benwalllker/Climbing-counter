@@ -179,6 +179,38 @@ input[type="text"]:focus {
 .timer-flash {
   animation: flashRed 1s infinite;
 }
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+#leaderboardTable {
+  min-width: 600px; /* ensures table doesn't shrink too small */
+}
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+button {
+  font-family: 'Orbitron', sans-serif; /* or your preferred font */
+  font-size: 1em;
+  font-weight: bold;
+  color: #ffc000;         /* golden yellow text */
+  background-color: #bf0000;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #f30808;
+}
+
 </style>
 </head>
 <body>
@@ -232,8 +264,8 @@ input[type="text"]:focus {
     <button onclick="failClimb()">Climb Failed</button>
   </div><button onclick="endGame('Game ended manually.')">End Game</button>
   <div style="flex-shrink: 0; text-align: center;">
-    <h2 style="font-size: 2.5em; margin: 0; color: #2e8b57;">Score</h2>
-    <div id="bigScore" style="font-size: 3em; font-weight: bold; color: #333;">0</div>
+    <h2 style="font-size: 2.5em; margin: 0; color: #ffc000;">Score</h2>
+    <div id="bigScore" style="font-size: 3em; font-weight: bold; color: whitesmoke;">0</div>
   </div>
 </div>
 <div id="timerDisplay" class="timer-display" style="display:none;">
@@ -245,13 +277,17 @@ input[type="text"]:focus {
   <ul id="scoreList"></ul>
   <strong>Total Score: <span id="totalScore">0</span></strong>
 </div>
+<div class="table-wrapper">
+  <table id="leaderboardTable" style="width:100%; border-collapse: collapse;">
+    <!-- table content -->
+  </table>
+</div>
 
  <script>
   let players = [];
   let currentPlayerIndex = 0;
   let gameMode = 'unlimited';
   let customLimit = 0;
-  let timerInterval = null;
   let timeRemaining = 0;
 
   function addPlayer() {
@@ -314,7 +350,7 @@ function startGame() {
     timeRemaining = customLimit * 60;
     document.getElementById('timerDisplay').style.display = 'block';
     updateTimerDisplay();
-    startTimer();
+    startTimer(timeRemaining);
   } else {
     document.getElementById('timerDisplay').style.display = 'none';
   }
@@ -407,19 +443,25 @@ if (gameMode === 'limit' && player.grade === 0) {
  
 console.log(`Player: ${player.name}, Grade: V${player.grade}`);
 }
+let timerInterval; // ✅ Declare globally
 
-let TimeRemaining = 120; // 2 minutes in seconds
-
-function startTimer() {
-  const interval = setInterval(() => {
+function startTimer(duration) {
+  let timeRemaining = duration;
+  timerInterval = setInterval(() => {
     updateTimerDisplay(timeRemaining);
     timeRemaining--;
 
     if (timeRemaining < 0) {
-      clearInterval(interval);
-      // handle end of timer
+      clearInterval(timerInterval);
+      endGame('Time is up!');
     }
   }, 1000);
+}
+
+function endGame(message) {
+  clearInterval(timerInterval); // ✅ Stops the timer
+  document.getElementById('timerDisplay').style.display = 'none';
+  // ... rest of your endGame logic
 }
 
 function formatTime(seconds) {
@@ -434,7 +476,9 @@ function formatTime(seconds) {
     if (!confirm("DONT BE SO WEAK! Are you sure you want to end the game?")) return;
   }
 
-  clearInterval(timerInterval);
+  clearInterval(timerInterval); // stop the countdown
+  document.getElementById('timerDisplay').style.display = 'none'; // hide the timer
+
   document.getElementById('scoreboard').style.display = 'block';
   document.getElementById('leaderboard').style.display = 'block';
   document.getElementById('climbHistoryPage').style.display = 'block';
@@ -445,7 +489,6 @@ function formatTime(seconds) {
   renderFinalLeaderboard();
   alert(`${message}`);
 }
-
   function updateLeaderboard() {
     const list = document.getElementById('leaderboardList');
     list.innerHTML = '';
@@ -547,8 +590,6 @@ div.innerHTML = `
 <div class="section" id="leaderboard" style="display:none;">
   <h2>Leaderboard</h2>
   <ul id="leaderboardList"></ul>
-  <button onclick="exportCSV()">Export as CSV</button>
-  <button onclick="exportJSON()">Export as JSON</button>
 </div>
 
 <!-- Climb History Section -->
