@@ -1,0 +1,230 @@
+body {
+  font-family: 'Orbitron', sans-serif;
+  background: #404D58;
+  color: #ffc000;
+  padding: 20px;
+  margin: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+input, select, button {
+  width: 100%;
+  font-size: 1rem;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+h1, h2, h3 {
+  color: #ffc000;
+}
+
+.section {
+  background: #556573;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+input, select, button {
+  margin-top: 5px;
+  padding: 8px;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1em;
+}
+
+button {
+  background-color: #bf0000;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background-color: #f30808;
+}
+
+#scoreboard ul, #leaderboard ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+li {
+  padding: 5px 0;
+  border-bottom: 1px solid #eee;
+}
+
+strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 1.2em;
+}
+
+.gameplay-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+@media (max-width: 600px) {
+  .gameplay-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  #bigScore {
+    font-size: 2.5em;
+    margin-top: 10px;
+  }
+
+  button {
+    font-size: 1.1em;
+    padding: 12px;
+  }
+}
+
+input[type="text"], input[type="number"], select {
+  background-color: #404D58;
+  color: #ffc000;
+  border: 1px solid #bf0000;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 1em;
+}
+
+input[type="text"]:focus {
+  color: #ffc000;
+  background-color: #556573;
+  outline: none;
+  border-color: #bf0000;
+}
+
+.app-title {
+  text-align: center;
+  font-size: 2.5em;
+  color: #ffc000;
+  margin-bottom: 20px;
+  font-weight: 700;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  letter-spacing: 1px;
+  border-bottom: 2px solid #ffc000;
+  padding-bottom: 10px;
+}
+
+.app-header {
+  max-width: 900px;
+  margin: 0 auto 24px auto;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(90deg, rgba(85,101,115,0.06), rgba(85,101,115,0.02));
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  border: 1px solid rgba(191,0,0,0.08);
+}
+
+.app-subtitle {
+  color: #ffd77a;
+  margin-top: 6px;
+  font-size: 0.95em;
+  opacity: 0.95;
+}
+
+main {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.player-name {
+  color: #ffc000;
+  font-weight: bold;
+}
+
+.player-score {
+  color: #ffc000;
+  font-weight: 600;
+}
+
+.player-info {
+  background-color: #556573;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  color: #ffc000;
+  border: 1px solid #bf0000;
+  box-sizing: border-box;
+}
+
+.player-info.current {
+  background-color: #404D58;
+  box-shadow: 0 0 10px rgba(255, 192, 0, 0.3);
+}
+
+.player-info.warning {
+  color: red;
+}
+
+.timer-display {
+  font-size: 3em;
+  font-weight: bold;
+  color: #ffc000;
+  text-align: center;
+  margin: 20px auto;
+}
+
+@keyframes flashRed {
+  0% { color: red; }
+  50% { color: #ff6666; }
+  100% { color: red; }
+}
+
+.timer-flash {
+  animation: flashRed 1s infinite;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+#leaderboardTable {
+  min-width: 600px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+button {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1em;
+  font-weight: bold;
+  color: #ffc000;
+  background-color: #bf0000;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #f30808;
+}
