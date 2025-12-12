@@ -1,12 +1,13 @@
 
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { prisma } from '../../../../lib/prisma'
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import { prisma } from "../../../../lib/prisma"
 import bcrypt from "bcryptjs"
 
-export const authOptions = {
-  adapter: PrismaAdapter(prisma),
+// Inline authOptions to avoid import issues
+const authOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -14,7 +15,7 @@ export const authOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials) {
+      async authorize(credentials: any) {
         if (!credentials?.email || !credentials?.password) {
           return null
         }
@@ -44,21 +45,17 @@ export const authOptions = {
       }
     })
   ],
-
   session: {
     strategy: "jwt" as const
   },
-  pages: {
-    signIn: "/",
-  },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: any) {
       if (user) {
         token.id = user.id
       }
       return token
     },
-    async session({ session, token }) {
+    async session({ session, token }: any) {
       if (token) {
         session.user.id = token.id
       }
@@ -68,6 +65,35 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 }
 
-const handler = NextAuth(authOptions)
+// GET /api/stats/leaderboard - Get global leaderboard
+export async function GET(req: NextRequest) {
+  try {
+    // Get top players by total score (simplified - just using user stats)
+    const topUsers = await prisma.user.findMany({
+      where: {
+        totalGames: {
+          gt: 0
+        }
+      },
+      orderBy: {
+        totalScore: 'desc'
+      },
+      take: 20
+    })
 
-export { handler as GET, handler as POST }
+    const leaderboard = topUsers.map((user: any) => ({
+      name: user.name || 'Anonymous',
+      totalScore: user.totalScore,
+      gamesPlayed: user.totalGames,
+      averageScore: user.averageScore
+    }))
+
+    return NextResponse.json({ leaderboard })
+  } catch (error) {
+    console.error('Error fetching leaderboard:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
