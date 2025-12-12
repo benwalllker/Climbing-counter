@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  players   Player[]
+  sessions  Session[]
+
+  // Game stats
+  totalGames       Int      @default(0)
+  gamesWon         Int      @default(0)
+  totalScore       Int      @default(0)
+  averageScore     Float    @default(0)
+  highestScore     Int      @default(0)
+  totalClimbs      Int      @default(0)
+  averageClimbs    Float    @default(0)
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  hostId      String
+  host        User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  gameMode    String   @default("unlimited") // unlimited, time, limit
+  customLimit Int      @default(0)
+  timeLimit   Int      @default(0) // in seconds
+  status      String   @default("waiting") // waiting, active, ended
+  createdAt   DateTime @default(now())
+  startedAt   DateTime?
+  endedAt     DateTime?
+
+  // Relations
+  players     Player[]
+  games       Game[]
+  stats       PlayerStat[]
+}
+
+model Player {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  name      String
+  score     Int      @default(0)
+  grade     Int      @default(0)
+  v0Climbs  Int      @default(0)
+  isActive  Boolean  @default(true)
+  joinedAt  DateTime @default(now())
+
+  // Relations
+  climbs    Climb[]
+  games     Game[]
+}
+
+model Game {
+  id        String   @id @default(cuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  playerId  String
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  grade     Int
+  attempts  Int
+  points    Int
+  createdAt DateTime @default(now())
+}
+
+model Climb {
+  id        String   @id @default(cuid())
+  playerId  String
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  grade     Int
+  attempts  Int
+  points    Int
+  createdAt DateTime @default(now())
+}
+
+model PlayerStat {
+  id            String   @id @default(cuid())
+  sessionId     String
+  session       Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  playerId      String
+  playerName    String
+  totalScore    Int      @default(0)
+  totalClimbs   Int      @default(0)
+  averageGrade  Float    @default(0)
+  highestGrade  Int      @default(0)
+  gamesPlayed   Int      @default(0)
+  gamesWon      Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
